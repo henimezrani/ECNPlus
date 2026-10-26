@@ -1,0 +1,9 @@
+.env
+data/
+__pycache__/
+*.pyc
+.DS_Store
+# Original evidence can contain account information or credentials.
+*.har
+*.xlsx
+Screenshot*.png
