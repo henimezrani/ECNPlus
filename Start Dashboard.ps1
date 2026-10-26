@@ -2,6 +2,18 @@ $ErrorActionPreference = 'Stop'
 $project = Split-Path -Parent $MyInvocation.MyCommand.Path
 $url = 'http://127.0.0.1:8765/'
 $server = $null
+$serverLogPaths = @()
+
+function Get-ServerOutput {
+    $output = @()
+    foreach ($path in $serverLogPaths) {
+        if (Test-Path -LiteralPath $path) {
+            $content = Get-Content -LiteralPath $path -Raw -ErrorAction SilentlyContinue
+            if ($content) { $output += $content.TrimEnd() }
+        }
+    }
+    return ($output -join [Environment]::NewLine)
+}
 
 try {
     Set-Location -LiteralPath $project
@@ -41,13 +53,23 @@ try {
         }
 
         $arguments = $pythonArgs + @('-m', 'ecnplus', 'serve')
+        $logId = [guid]::NewGuid().ToString('N')
+        $stdoutLog = Join-Path $env:TEMP "ecn-companion-$logId.stdout.log"
+        $stderrLog = Join-Path $env:TEMP "ecn-companion-$logId.stderr.log"
+        $serverLogPaths = @($stdoutLog, $stderrLog)
         $server = Start-Process -FilePath $python.Source -ArgumentList $arguments `
-            -WorkingDirectory $project -PassThru
+            -WorkingDirectory $project -PassThru `
+            -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog
 
         $deadline = (Get-Date).AddSeconds(30)
         while ((Get-Date) -lt $deadline) {
             if ($server.HasExited) {
-                throw 'The dashboard server stopped during startup. Check the ECN Companion terminal window for details.'
+                Start-Sleep -Milliseconds 200
+                $serverOutput = Get-ServerOutput
+                if ($serverOutput) {
+                    throw "The dashboard server stopped during startup:`n$serverOutput"
+                }
+                throw "The dashboard server stopped during startup. Its output is in $stderrLog."
             }
             try {
                 $page = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 2
@@ -61,6 +83,10 @@ try {
     }
 
     if (-not $ready) {
+        $serverOutput = Get-ServerOutput
+        if ($serverOutput) {
+            throw "The dashboard did not respond at http://127.0.0.1:8765 within 30 seconds:`n$serverOutput"
+        }
         throw 'The dashboard did not respond at http://127.0.0.1:8765 within 30 seconds.'
     }
 
@@ -84,6 +110,9 @@ try {
 } catch {
     Write-Host ''
     Write-Host $_.Exception.Message -ForegroundColor Red
+    if ($serverLogPaths.Count -gt 0) {
+        Write-Host "Server logs: $($serverLogPaths -join ', ')" -ForegroundColor DarkGray
+    }
     Read-Host 'Press Enter to close this window'
     exit 1
 }
