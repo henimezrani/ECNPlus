@@ -1,0 +1,2 @@
+# Python's zoneinfo module uses the IANA time-zone database supplied by this package on Windows.
+tzdata>=2025.1

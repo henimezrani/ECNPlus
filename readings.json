@@ -1,0 +1,11 @@
+{
+  "timezone": "Africa/Tunis",
+  "readings": [
+    {"id": "reading_1", "name": "Première lecture", "starts_on": null},
+    {"id": "reading_2", "name": "Deuxième lecture", "starts_on": "2026-09-01"},
+    {"id": "reading_3", "name": "Troisième lecture", "starts_on": "2026-10-15"},
+    {"id": "reading_4", "name": "Quatrième lecture", "starts_on": null},
+    {"id": "reading_5", "name": "Cinquième lecture", "starts_on": null}
+  ],
+  "attempt_reading_overrides": {}
+}
