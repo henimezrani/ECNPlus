@@ -5,9 +5,6 @@ const csrf = document.querySelector('meta[name="ecnplus-token"]').content;
 const profileSlug = document.querySelector('meta[name="ecnplus-profile"]').content;
 const profileName = document.querySelector('meta[name="ecnplus-profile-name"]').content;
 const apiPrefix = `/${profileSlug}`;
-// Simple UI gate only. Edit these initial codes here; they are visible in the page source.
-const spaceAccessCodes = Object.freeze({yasmine: '1111', houssein: '2222', autre: '3333'});
-const accessStorageKey = `ecnplus-access:${profileSlug}`;
 const number = value => new Intl.NumberFormat('fr-TN').format(value ?? 0);
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
@@ -19,15 +16,16 @@ const state = {data: null, focus: null, detail: null, detailReading: 'all', poll
 async function api(path, body) {
   let response;
   try {
-    response = await fetch(apiPrefix + path, {cache: 'no-store', method: body === undefined ? 'GET' : 'POST',
+    response = await fetch(apiPrefix + path, {cache: 'no-store', credentials:'same-origin', method: body === undefined ? 'GET' : 'POST',
       headers: body === undefined ? {} : {'Content-Type': 'application/json', 'X-ECNPlus-Token': csrf},
       ...(body === undefined ? {} : {body: JSON.stringify(body)})});
   } catch {
-    throw new Error('Impossible de joindre le tableau de bord local. Vérifiez que son terminal est toujours ouvert.');
+    throw new Error('Impossible de joindre le tableau de bord. Vérifiez votre connexion et réessayez.');
   }
   let data;
   try { data = await response.json(); }
   catch { throw new Error('Le tableau de bord a renvoyé une réponse invalide. Rechargez la page et réessayez.'); }
+  if (response.status === 401 && path !== '/api/access') window.location.reload();
   if (!response.ok) throw new Error(data.error || 'Une erreur est survenue. Veuillez réessayer.');
   return data;
 }
@@ -128,7 +126,7 @@ async function load() {
   $('focus-reading').innerHTML = readings.map(r => `<option value="${r.id}">${escapeHTML(r.name)}</option>`).join('');
   $('focus-reading').value = state.focus;
   $('intro').textContent = data.summary ? `${number(data.summary.courses.length)} cours. Toutes les lectures. Au même endroit.` : 'Tous les cours et toutes les lectures réunis au même endroit.';
-  $('save-state').textContent = data.summary ? 'Données enregistrées localement' : 'Prêt pour la première synchronisation';
+  $('save-state').textContent = data.summary ? 'Données de révision enregistrées' : 'Prêt pour la première synchronisation';
   $('last-sync').textContent = data.collection.last_sync ? `Dernière synchronisation : ${syncFormat.format(new Date(data.collection.last_sync))}` : 'Aucune donnée chargée à l’ouverture';
   $('connection-state').textContent = data.credential_configured ? 'Jeton configuré' : 'Jeton requis';
   overview();
@@ -153,7 +151,7 @@ async function load() {
 
 function showJobFailure(job) {
   const unfinished = state.data?.checkpoint && state.data.checkpoint.status !== 'complete';
-  const action = job.kind === 'settings' || /token|account/i.test(job.message)
+  const action = job.kind === 'settings' || /jeton|compte|token|account/i.test(job.message)
     ? {label:'Ouvrir les paramètres', run:openSettings}
     : unfinished ? {label:'Reprendre la synchronisation', run:() => startSync(true)}
     : {label:'Réessayer', run:() => startSync(false)};
@@ -200,7 +198,7 @@ function pollJob() {
       failures++;
       if (failures < 4) { state.poll = setTimeout(next, 1500); return; }
       state.poll = null;
-      notice('Connexion perdue. Laissez le terminal du tableau de bord ouvert, puis rechargez cette page.', true);
+      notice('Connexion perdue. Vérifiez votre connexion, puis rechargez cette page.', true);
     }
   };
   state.poll = setTimeout(next, 500);
@@ -223,7 +221,7 @@ function openSettings() {
   $('settings-error').hidden = true;
   $('credential-error').hidden = true;
   $('credential').value = '';
-  $('credential-note').textContent = 'Enregistré uniquement sur cet ordinateur. Votre jeton ne sera jamais affiché.';
+  $('credential-note').textContent = 'Votre jeton reste associé à cet espace et n’est jamais affiché.';
   $('reading-fields').innerHTML = state.data.settings.readings.map((reading, i) => `<div class="reading-setting-row"><input type="text" name="name-${reading.id}" aria-label="Nom de la lecture ${i + 1}" value="${escapeHTML(reading.name)}" required maxlength="80">${i ? `<input type="date" name="date-${reading.id}" aria-label="Date de début de la lecture ${i + 1}" value="${escapeHTML(reading.starts_on || '')}">` : '<span class="first-period">Toute activité antérieure</span>'}</div>`).join('');
   if (!$('settings-dialog').open) $('settings-dialog').showModal();
 }
@@ -282,6 +280,7 @@ $('credential-form').addEventListener('submit', async event => {
     await api('/api/credential', {authorization:$('credential').value});
     $('credential').value='';
     state.data.credential_configured=true;
+    renderJob(state.data.job);
     $('connection-state').textContent='Jeton configuré';
     $('credential-note').textContent='Jeton mis à jour. Vous pouvez maintenant synchroniser vos données.';
   } catch (error) { $('credential-error').textContent=error.message; $('credential-error').hidden=false; }
@@ -301,27 +300,29 @@ function unlockSpace() {
   load().catch(error => {notice(error.message, true, {label:'Réessayer', run:() => load().catch(e => notice(e.message,true))}); $('save-state').textContent='Impossible de charger les données enregistrées'; $('overview-stats').innerHTML=''; $('course-grid').setAttribute('aria-busy','false');});
 }
 
-$('access-form').addEventListener('submit', event => {
+$('access-form').addEventListener('submit', async event => {
   event.preventDefault();
-  const code = $('access-code').value.trim();
-  if (!spaceAccessCodes[profileSlug] || code !== spaceAccessCodes[profileSlug]) {
+  $('access-submit').disabled = true;
+  try {
+    await api('/api/access', {code: $('access-code').value.trim()});
+    unlockSpace();
+  } catch (error) {
+    $('access-error').textContent = error.message;
     $('access-error').hidden = false;
     $('access-code').setAttribute('aria-invalid', 'true');
     $('access-code').focus();
     $('access-code').select();
-    return;
-  }
-  try { sessionStorage.setItem(accessStorageKey, code); } catch { /* Still usable when browser storage is disabled. */ }
-  unlockSpace();
+  } finally { $('access-submit').disabled = false; }
 });
 $('access-code').addEventListener('input', () => {
   $('access-error').hidden = true;
   $('access-code').removeAttribute('aria-invalid');
 });
-$('lock-space').addEventListener('click', () => {
-  try { sessionStorage.removeItem(accessStorageKey); } catch { /* No stored unlock to clear. */ }
-  window.location.reload();
+$('lock-space').addEventListener('click', async () => {
+  try { await api('/api/logout', {}); window.location.reload(); }
+  catch (error) { toast(error.message); }
 });
-try {
-  if (spaceAccessCodes[profileSlug] && sessionStorage.getItem(accessStorageKey) === spaceAccessCodes[profileSlug]) unlockSpace();
-} catch { /* Show the code form when browser storage is disabled. */ }
+api('/api/access').then(result => {
+  if (result.authorized) unlockSpace();
+  else $('access-code').focus();
+}).catch(error => { $('access-error').textContent=error.message; $('access-error').hidden=false; });

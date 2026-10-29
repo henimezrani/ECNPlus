@@ -81,9 +81,13 @@ def is_complete(answered, size):
 
 def normalize(store, run_id):
     """Merge observed attempts by ID, retaining history omitted by later responses."""
-    modules, courses, series, attempts = {}, {}, {}, {}
+    seed = store.seed(run_id) if hasattr(store, 'seed') else None
+    modules = {m['_id']: m for m in seed['modules']} if seed else {}
+    courses = {c['id']: c for c in seed['courses']} if seed else {}
+    series = {s['id']: s for s in seed['series']} if seed else {}
+    attempts = {a['id']: a for a in seed['attempts']} if seed else {}
     seen_paths = {}
-    conflicts = set()
+    conflicts = set(seed['conflicting_series_ids']) if seed else set()
     target = store.run(run_id)
     for response in store.responses():
         if store.run(response['run_id'])['started_at'] > target['started_at']:

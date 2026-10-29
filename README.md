@@ -1,6 +1,10 @@
 # ECN Companion
 
-A local dashboard for all 75 courses, with completed series and actual answered questions across each reading. It uses **Python 3.10+ and plain HTML/CSS/JavaScript**. On macOS and Linux, no package installation, framework, build step, or database server is required. Windows also needs the small `tzdata` package for Tunisia time-zone rules. The collector makes read-only GET requests to ECNPlus; the dashboard opens saved data immediately.
+A dashboard for all 75 courses, with completed series and actual answered questions across each reading. It uses **Python 3.10+ and plain HTML/CSS/JavaScript**. On macOS and Linux, no package installation, framework, build step, or database server is required. Windows also needs the small `tzdata` package for Tunisia time-zone rules. The collector makes read-only GET requests to ECNPlus; the dashboard opens saved data immediately.
+
+## Hosted version: Render + Neon
+
+For access from an iPad or any browser without installing Python, use the free hosted deployment described in [DEPLOYMENT.md](DEPLOYMENT.md). It serves the UI and API together on Render and stores profile data and encrypted ECNPlus tokens in Neon. Local mode remains available below and does not require the hosted dependencies.
 
 ## Start here
 
@@ -36,13 +40,13 @@ To copy the Authorization value, open an authenticated ECNPlus page, open Develo
 - **Synchroniser** updates the catalogue and histories in the background, with visible progress. The existing totals remain usable until the job finishes. An incomplete sync offers **Reprendre la synchronisation**, and expired tokens can be replaced in **Paramètres**. Opening the page does not trigger any ECNPlus requests.
 - **Paramètres → Enregistrer et recalculer** changes reading dates and recalculates the cached dataset offline. Fourth and fifth readings appear when their start dates are configured. A failed calculation preserves the previous settings and dataset.
 
-The server serves only the dashboard's static assets and explicit API routes. It does not expose profile `.env` files, raw databases, project files, or directory listings. Settings, token and sync actions require the page's local request token and same-origin requests. The ECNPlus credential is never returned to the browser. These protections guard the local app's requests; the three profile URLs and browser-only access-code screen are not server authentication.
+The server serves only the dashboard's static assets and explicit API routes. It does not expose profile `.env` files, raw databases, project files, or directory listings. Settings, token and sync actions require the page's local request token and same-origin requests. The ECNPlus credential is never returned to the browser. Access codes are checked by the server before it returns profile data or accepts changes. Signed HttpOnly cookies keep each space unlocked for up to 24 hours; restarting the local server also invalidates local sessions.
 
 ### Simple access codes
 
-Initial codes are **1111** for Yasmine, **2222** for Houssein, and **3333** for Autre. Edit the `spaceAccessCodes` object near the top of `dist/app.js` to change them, then reload the page. A code change also invalidates the previously remembered code. The current browser tab remembers the unlocked space using `sessionStorage`. Choose **Verrouiller mon espace** to clear that space's remembered code and return to its code screen. If browser storage is disabled, entering a code still works, but a page reload asks for it again.
+In local mode, copy `access-codes.example.json` to the private, ignored `access-codes.json` file and edit its three values. Without this file the defaults are **1111**, **2222**, and **3333** in profile order. Restart the local server after changing codes. Choose **Verrouiller mon espace** to close its session. Codes are no longer shipped in JavaScript.
 
-This is deliberately a simple UI check: the codes are visible in the downloaded JavaScript, and the API remains accessible without this code. It does not change or replace anyone's ECNPlus token.
+In hosted mode, the three codes come from the Render `ACCESS_CODE_*` variables. HTTPS cookies and a stable server secret preserve sessions across restarts. See [DEPLOYMENT.md](DEPLOYMENT.md). The codes do not replace anyone's ECNPlus token.
 
 You can also keep using the collector without the dashboard:
 

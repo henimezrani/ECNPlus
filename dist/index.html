@@ -20,9 +20,9 @@
       <p class="chooser-intro">Saisissez votre code pour ouvrir cet espace de révision.</p>
       <form id="access-form">
         <label for="access-code">Code d’accès</label>
-        <input id="access-code" name="access-code" type="password" inputmode="numeric" autocomplete="off" required maxlength="80" autofocus aria-describedby="access-error">
+        <input id="access-code" name="access-code" type="password" autocomplete="current-password" required maxlength="128" autofocus aria-describedby="access-error">
         <p id="access-error" class="form-error" role="alert" hidden>Code incorrect. Réessayez.</p>
-        <button class="button primary" type="submit">Ouvrir mon espace</button>
+        <button id="access-submit" class="button primary" type="submit">Ouvrir mon espace</button>
       </form>
       <a class="access-back" href="/">Choisir un autre espace</a>
       <noscript><p>Activez JavaScript dans votre navigateur pour ouvrir cet espace.</p></noscript>
@@ -56,7 +56,7 @@
       <button class="nav-item" data-settings><svg class="icon"><use href="#i-settings"/></svg>Paramètres</button>
     </nav>
     <div class="sidebar-note"><span class="leaf-mark"><svg class="icon"><use href="#i-leaf"/></svg></span><p>Une lecture<br>à la fois.</p><span>Chaque progrès compte.</span></div>
-    <div class="local-note"><span class="status-dot"></span>Enregistré sur votre ordinateur</div>
+    <div class="local-note"><span class="status-dot"></span>Données de votre espace</div>
   </aside>
 
   <main id="overview">
@@ -81,7 +81,7 @@
 
   <dialog id="course-dialog" class="course-dialog" aria-labelledby="detail-title"><div class="dialog-topline"><span class="eyebrow">DÉTAIL DU COURS</span><button class="icon-button" data-close="course-dialog" aria-label="Fermer le détail du cours"><svg class="icon"><use href="#i-close"/></svg></button></div><h2 id="detail-title">Détail du cours</h2><div id="detail-content"></div></dialog>
 
-  <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title"><div class="dialog-topline"><span class="eyebrow">PERSONNALISEZ VOTRE SUIVI</span><button class="icon-button" data-close="settings-dialog" aria-label="Fermer les paramètres"><svg class="icon"><use href="#i-close"/></svg></button></div><h2 id="settings-title">Paramètres des lectures</h2><p class="dialog-description">Modifiez les dates selon votre rythme de révision. Les totaux seront recalculés à partir des données enregistrées.</p><form id="settings-form"><div class="settings-columns"><span>Lecture</span><span>Commence le</span></div><div id="reading-fields"></div><p class="field-note">Les dates suivent l’heure de la Tunisie. Laissez les lectures à venir vides jusqu’à ce que vous en ayez besoin.</p><p class="form-error" id="settings-error" role="alert" hidden></p><div class="form-actions"><button type="button" class="button secondary" data-close="settings-dialog">Annuler</button><button type="submit" class="button primary" id="save-settings">Enregistrer et recalculer</button></div></form><section class="connection-settings" aria-labelledby="connection-title"><div class="connection-heading"><h3 id="connection-title">Connexion à ECNPlus</h3><span class="small-tag" id="connection-state">Jeton local</span></div><p>Lorsque votre session expire, collez ici une nouvelle valeur d’autorisation ECNPlus.</p><form id="credential-form"><label class="sr-only" for="credential">Nouveau jeton d’autorisation ECNPlus</label><div class="credential-row"><input id="credential" type="password" placeholder="Bearer …" autocomplete="off" spellcheck="false"><button class="button secondary" type="submit" id="save-credential">Mettre à jour le jeton</button></div><p class="form-error" id="credential-error" role="alert" hidden></p><p class="field-note" id="credential-note">Enregistré uniquement sur cet ordinateur. Votre jeton ne sera jamais affiché.</p></form></section></dialog>
+  <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title"><div class="dialog-topline"><span class="eyebrow">PERSONNALISEZ VOTRE SUIVI</span><button class="icon-button" data-close="settings-dialog" aria-label="Fermer les paramètres"><svg class="icon"><use href="#i-close"/></svg></button></div><h2 id="settings-title">Paramètres des lectures</h2><p class="dialog-description">Modifiez les dates selon votre rythme de révision. Les totaux seront recalculés à partir des données enregistrées.</p><form id="settings-form"><div class="settings-columns"><span>Lecture</span><span>Commence le</span></div><div id="reading-fields"></div><p class="field-note">Les dates suivent l’heure de la Tunisie. Laissez les lectures à venir vides jusqu’à ce que vous en ayez besoin.</p><p class="form-error" id="settings-error" role="alert" hidden></p><div class="form-actions"><button type="button" class="button secondary" data-close="settings-dialog">Annuler</button><button type="submit" class="button primary" id="save-settings">Enregistrer et recalculer</button></div></form><section class="connection-settings" aria-labelledby="connection-title"><div class="connection-heading"><h3 id="connection-title">Connexion à ECNPlus</h3><span class="small-tag" id="connection-state">Jeton ECNPlus</span></div><p>Lorsque votre session expire, collez ici une nouvelle valeur d’autorisation ECNPlus.</p><form id="credential-form"><label class="sr-only" for="credential">Nouveau jeton d’autorisation ECNPlus</label><div class="credential-row"><input id="credential" type="password" placeholder="Bearer …" autocomplete="off" spellcheck="false"><button class="button secondary" type="submit" id="save-credential">Mettre à jour le jeton</button></div><p class="form-error" id="credential-error" role="alert" hidden></p><p class="field-note" id="credential-note">Votre jeton reste associé à cet espace et n’est jamais affiché.</p></form></section></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
 </body>
 </html>

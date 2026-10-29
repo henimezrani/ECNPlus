@@ -133,7 +133,7 @@ def md(value):
     return str(value).replace('|', '\\|').replace('\n', ' ')
 
 
-def export(store, run_id, settings, data_dir):
+def build_report(store, run_id, settings):
     dataset = normalize(store, run_id)
     result = summarize(dataset, settings)
     collection = result['collection']
@@ -153,6 +153,11 @@ def export(store, run_id, settings, data_dir):
     collection['phase_ready'] = (dataset['run']['status'] == 'complete' and
                                  len(dataset['courses']) >= 75 and
                                  not any(i['severity'] == 'review' for i in result['issues']))
+    return dataset, result, collection
+
+
+def export(store, run_id, settings, data_dir):
+    dataset, result, collection = build_report(store, run_id, settings)
     snapshot = Path(data_dir) / 'snapshots' / identifier()
     snapshot.mkdir(parents=True, mode=0o700)
     write_json(snapshot / 'dataset.json', dataset)
@@ -359,12 +364,8 @@ def configure():
         value = value[7:].strip()
     if not value or any(c.isspace() for c in value):
         raise ValueError('Paste only the token or the complete Bearer value')
-    path = PROJECT / '.env'
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    if os.name != 'nt':
-        os.fchmod(descriptor, 0o600)
-    with os.fdopen(descriptor, 'w', encoding='utf-8') as stream:
-        stream.write('ECNPLUS_AUTHORIZATION=Bearer ' + value + '\n')
+    from .runtime import update_env
+    update_env({'ECNPLUS_AUTHORIZATION': 'Bearer ' + value})
     print('Credential saved in local .env. It is not included in collected data or reports.')
     return 0
 

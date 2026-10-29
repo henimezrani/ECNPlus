@@ -15,6 +15,7 @@ from urllib.parse import quote, unquote, urlsplit
 from zoneinfo import ZoneInfo
 
 from .api import authorization
+from .access import Access
 from .profiles import default_profiles_root, initialize_profiles
 from .storage import Store, lock, now, write_json
 from .summary import is_complete, read_settings, validate_settings
@@ -71,11 +72,8 @@ class Dashboard:
 
     def payload(self):
         snapshot = self.snapshot()
-        settings = read_settings(self.settings_path)
-        try:
-            configured = bool(authorization(self.profile_dir, allow_environment=False))
-        except ValueError:
-            configured = False
+        settings = self.settings()
+        configured = self.credential_configured()
         summary = snapshot['summary'] if snapshot else None
         saved_settings = summary['settings'] if summary else settings
         today = datetime.now(ZoneInfo('Africa/Tunis')).date().isoformat()
@@ -95,6 +93,15 @@ class Dashboard:
                 }, 'settings': settings, 'settings_changed': settings != saved_settings,
                 'current_reading': current, 'credential_configured': configured,
                 'checkpoint': self.checkpoint(), 'job': self.job_state()}
+
+    def settings(self):
+        return read_settings(self.settings_path)
+
+    def credential_configured(self):
+        try:
+            return bool(authorization(self.profile_dir, allow_environment=False))
+        except ValueError:
+            return False
 
     def course(self, course_id):
         snapshot = self.snapshot()
@@ -261,6 +268,9 @@ class Dashboard:
 
 
 def handler_for(apps):
+    access = Access.local()
+    for slug, app in apps.items():
+        app.csrf = access.csrf(slug)
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, format, *args):
             # No request bodies or credentials in access logs.
@@ -270,7 +280,7 @@ def handler_for(apps):
             return self.headers.get('Host') in (
                 f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}')
 
-        def send(self, status, body, content_type='application/json; charset=utf-8'):
+        def send(self, status, body, content_type='application/json; charset=utf-8', headers=None):
             if isinstance(body, (dict, list)):
                 body = json.dumps(body, ensure_ascii=False, allow_nan=False).encode('utf-8')
             self.send_response(status)
@@ -280,6 +290,8 @@ def handler_for(apps):
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.send_header('Referrer-Policy', 'no-referrer')
             self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+            for key, value in (headers or {}).items():
+                self.send_header(key, value)
             self.end_headers()
             self.wfile.write(body)
 
@@ -314,6 +326,11 @@ def handler_for(apps):
                     return self.page(app)
                 if not rest.startswith('/api/'):
                     return self.send(404, {'error': 'Page introuvable.'})
+                allowed = access.allowed(slug, self.headers.get('Cookie'))
+                if rest == '/api/access':
+                    return self.send(200, {'authorized': allowed})
+                if not allowed:
+                    return self.send(401, {'error': 'Saisissez le code de cet espace.'})
                 if rest == '/api/dashboard':
                     return self.send(200, app.payload())
                 if rest == '/api/job':
@@ -347,6 +364,14 @@ def handler_for(apps):
                 if not isinstance(body, dict):
                     raise ValueError('Format de requête invalide.')
                 action = '/' + '/'.join(parts[1:])
+                if action == '/api/access':
+                    if not access.check_code(slug, body.get('code'), self.client_address[0]):
+                        return self.send(401, {'error': 'Code incorrect. Réessayez.'})
+                    return self.send(200, {'authorized': True}, headers={'Set-Cookie': access.cookie(slug)})
+                if not access.allowed(slug, self.headers.get('Cookie')):
+                    return self.send(401, {'error': 'Saisissez le code de cet espace.'})
+                if action == '/api/logout':
+                    return self.send(200, {'authorized': False}, headers={'Set-Cookie': access.cookie(slug, logout=True)})
                 if action == '/api/sync':
                     if type(body.get('resume', False)) is not bool:
                         raise ValueError('Option de reprise invalide.')
