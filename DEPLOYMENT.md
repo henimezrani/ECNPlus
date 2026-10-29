@@ -1,14 +1,14 @@
 # Déployer gratuitement sur Render et Neon
 
-Le site et son API tournent dans **un seul service web Render Free**. Neon conserve les données des trois espaces, les paramètres des lectures, les points de reprise et les jetons ECNPlus chiffrés. Aucun ordinateur personnel ne doit rester allumé. L’iPad accède au site dans Safari ; il peut aussi l’ajouter à l’écran d’accueil.
+Le site et son API tournent dans **un seul service web Render Free**. Neon conserve les données des quatre espaces, les paramètres des lectures, les points de reprise et les jetons ECNPlus chiffrés. Aucun ordinateur personnel ne doit rester allumé. L’iPad accède au site dans Safari ; il peut aussi l’ajouter à l’écran d’accueil.
 
 ## Déploiement actuel
 
-Le service est en ligne sur **https://ecn-companion.onrender.com** dans le workspace Render confirmé par le propriétaire. Il utilise le plan **Free**, la région **Frankfurt**, le dépôt `henimezrani/ECNPlus` et la branche `main`. Les espaces sont accessibles à `/yasmine`, `/houssein` et `/autre`.
+Le service est en ligne sur **https://ecn-companion.onrender.com** dans le workspace Render confirmé par le propriétaire. Il utilise le plan **Free**, la région **Frankfurt**, le dépôt `henimezrani/ECNPlus` et la branche `main`. Les espaces sont accessibles à `/yasmine`, `/houssein`, `/autre` et `/thabet`.
 
-Ce service a été créé directement avec l’intégration Render. Sa configuration active et ses sept variables privées sont gérées dans [Render Dashboard](https://dashboard.render.com/web/srv-dbhra4rl550s73dvklc0). Le fichier `render.yaml` est une référence de recréation ; aucun Blueprint ne le synchronise automatiquement avec ce service. Ne pas créer un deuxième service pour terminer cette installation. Le service utilise le contrôle TCP Render par défaut ; son endpoint HTTP `/healthz` a également été vérifié publiquement.
+Ce service a été créé directement avec l’intégration Render. Sa configuration active et ses huit variables privées sont gérées dans [Render Dashboard](https://dashboard.render.com/web/srv-dbhra4rl550s73dvklc0). Le fichier `render.yaml` est une référence de recréation ; aucun Blueprint ne le synchronise automatiquement avec ce service. Ne pas créer un deuxième service pour terminer cette installation. Le service utilise le contrôle TCP Render par défaut ; son endpoint HTTP `/healthz` a également été vérifié publiquement.
 
-L’historique local et les paramètres de Yasmine ont été importés et comparés au tableau de bord déployé. Les deux autres espaces sont prêts, sans historique. Aucun jeton ECNPlus n’a été importé. Les étapes de préparation ci-dessous servent à une nouvelle installation ou à une recréation ; elles ne sont pas à refaire pour utiliser le site actuel.
+L’historique local et les paramètres de Yasmine ont été importés et comparés au tableau de bord déployé. Thabet commence avec un espace indépendant sans historique. Aucun jeton ECNPlus n’a été importé. Les étapes de préparation ci-dessous servent à une nouvelle installation ou à une recréation ; elles ne sont pas à refaire pour utiliser le site actuel.
 
 ## Préparer la configuration privée
 
@@ -28,7 +28,7 @@ Cette étape se fait une seule fois sur l’ordinateur qui possède les données
 
    Garder `sslmode=require` ou une vérification TLS plus stricte.
 
-3. La commande `prepare` conserve les valeurs déjà présentes et crée les clés manquantes. Elle reprend les codes de `access-codes.json` s’il existe, sinon elle génère trois codes. Elle écrit les **sept variables** nécessaires à Render dans le fichier privé `deploy.env` :
+3. La commande `prepare` conserve les valeurs déjà présentes et crée les clés manquantes. Elle reprend les codes de `access-codes.json` s’il existe, sinon elle génère les codes manquants. Elle écrit les **huit variables** nécessaires à Render dans le fichier privé `deploy.env` :
 
    | Variable | Utilisation |
    |---|---|
@@ -39,6 +39,7 @@ Cette étape se fait une seule fois sur l’ordinateur qui possède les données
    | `ACCESS_CODE_YASMINE` | Code de l’espace Yasmine |
    | `ACCESS_CODE_HOUSSEIN` | Code de l’espace Houssein |
    | `ACCESS_CODE_AUTRE` | Code de l’espace Autre |
+   | `ACCESS_CODE_THABET` | Code de l’espace Thabet |
 
    Conserver une copie privée de ces valeurs. **Ne pas régénérer `TOKEN_ENCRYPTION_KEY` après avoir enregistré des jetons** : une autre clé ne peut pas les déchiffrer. Si cette clé est perdue, les historiques restent disponibles, mais chaque personne doit enregistrer à nouveau son jeton. Changer un code d’accès invalide les sessions de cet espace.
 
@@ -51,7 +52,7 @@ python -m ecnplus.cloud_admin migrate
 python -m ecnplus.cloud_admin import-local --profile yasmine --data-dir data --settings readings.json
 ```
 
-Pour importer des données provenant du mode local à trois espaces, remplacer les deux chemins par ceux du profil concerné. Sur Windows, ils se trouvent sous `%LOCALAPPDATA%\ECN Companion\profiles\yasmine\`. L’import refuse un espace qui contient déjà un historique. Il ne copie **aucun jeton ECNPlus**. Il conserve les dates de lectures et les tentatives observées, y compris les tentatives anciennes absentes des dernières réponses ECNPlus.
+Pour importer des données provenant du mode local à plusieurs espaces, remplacer les deux chemins par ceux du profil concerné. Sur Windows, ils se trouvent sous `%LOCALAPPDATA%\ECN Companion\profiles\yasmine\`. L’import refuse un espace qui contient déjà un historique. Il ne copie **aucun jeton ECNPlus**. Il conserve les dates de lectures et les tentatives observées, y compris les tentatives anciennes absentes des dernières réponses ECNPlus.
 
 ## Créer le service Render
 
@@ -59,7 +60,7 @@ Le dépôt contient `render.yaml`, qui décrit un seul service **Free**, en rég
 
 1. Dans [Render](https://dashboard.render.com/), choisir **New → Blueprint**.
 2. Sélectionner le dépôt GitHub **henimezrani/ECNPlus**, branche **main**. Le chemin du Blueprint est `render.yaml`.
-3. Render demande les sept variables marquées `sync: false`. Copier leurs valeurs depuis le fichier privé `deploy.env`, sans guillemets JSON autour de la valeur si vous les collez une par une. Conserver exactement la valeur de la clé de chiffrement, y compris son éventuel `=` final.
+3. Render demande les huit variables marquées `sync: false`. Copier leurs valeurs depuis le fichier privé `deploy.env`, sans guillemets JSON autour de la valeur si vous les collez une par une. Conserver exactement la valeur de la clé de chiffrement, y compris son éventuel `=` final.
 4. Vérifier le plan **Free**, la région **Frankfurt** et l’absence de service payant, puis lancer le déploiement.
 5. Attendre que le service soit **Live**, puis ouvrir son adresse `https://…onrender.com`.
 
@@ -74,13 +75,13 @@ Si l’interface Blueprint n’est pas disponible, créer **New → Web Service*
 | Start Command | `python -m ecnplus.cloud_admin migrate && gunicorn --workers 1 --threads 8 --timeout 120 --bind 0.0.0.0:$PORT wsgi:app` |
 | Health Check Path | `/healthz` |
 
-Ajouter les sept variables dans **Environment**. L’option **Add from .env** peut importer le contenu de `deploy.env` ; vérifier que les valeurs sont importées sans leurs guillemets de sérialisation. Ne pas importer le `.env` complet du projet : il contient aussi la configuration du collecteur local.
+Ajouter les huit variables dans **Environment**. L’option **Add from .env** peut importer le contenu de `deploy.env` ; vérifier que les valeurs sont importées sans leurs guillemets de sérialisation. Ne pas importer le `.env` complet du projet : il contient aussi la configuration du collecteur local.
 
 L’application utilise automatiquement `RENDER_EXTERNAL_URL`, fourni par Render. **Aucune URL n’a besoin d’être codée dans le dépôt.** Pour un domaine personnalisé, ajouter `PUBLIC_BASE_URL=https://votre-domaine` et utiliser exclusivement cette adresse.
 
 ## Première utilisation
 
-- Ouvrir `/yasmine`, `/houssein` ou `/autre` et saisir le code de cet espace.
+- Ouvrir `/yasmine`, `/houssein`, `/autre` ou `/thabet` et saisir le code de cet espace.
 - Ouvrir **Paramètres**, coller le jeton ECNPlus de cette personne et l’enregistrer. Le jeton peut être fourni avec ou sans le préfixe `Bearer`.
 - Choisir **Synchroniser**. Laisser la page ouverte pendant cette mise à jour pour suivre son avancement.
 - Consulter ensuite les cours sur ordinateur ou iPad avec la même adresse et le même code. Aucun Python, script Windows ou jeton n’a besoin d’être installé sur l’iPad.
@@ -104,7 +105,7 @@ Le système ne garantit pas un historique ECNPlus antérieur à ce qui a été r
 
 ## Diagnostic
 
-- **Échec avant le démarrage** : vérifier les sept variables et que la connexion directe n’utilise pas `-pooler`. Ne pas publier leurs valeurs dans les logs ou une capture.
+- **Échec avant le démarrage** : vérifier les huit variables et que la connexion directe n’utilise pas `-pooler`. Ne pas publier leurs valeurs dans les logs ou une capture.
 - **Adresse du site invalide** : utiliser l’URL Render automatique ou le domaine exact configuré dans `PUBLIC_BASE_URL`.
 - **Jeton illisible** : vérifier que `TOKEN_ENCRYPTION_KEY` est celle utilisée lors de l’enregistrement ; sinon enregistrer à nouveau le jeton ECNPlus.
 - **Jeton d’un autre compte** : choisir l’espace de la bonne personne. Le site refuse de mélanger deux comptes ECNPlus dans un même historique.

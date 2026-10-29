@@ -398,7 +398,7 @@ def main(argv=None):
     parser.add_argument('--settings', default=str(PROJECT / 'readings.json'), help='Editable reading boundaries and reviewed attempt overrides')
     parser.add_argument('--credential-dir', default=str(PROJECT), help='Directory containing the local .env credential file')
     parser.add_argument('--ignore-environment-token', action='store_true', help='Use only the selected local credential file')
-    parser.add_argument('--profiles-dir', help='Local root directory for the three dashboard profiles')
+    parser.add_argument('--profiles-dir', help='Local root directory for the dashboard profiles')
     commands = parser.add_subparsers(dest='command', required=True)
     commands.add_parser('configure', help='Save/replace the credential using a hidden prompt')
     sync_parser = commands.add_parser('sync', help='Refresh the complete catalogue and all available series histories')

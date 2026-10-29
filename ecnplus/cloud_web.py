@@ -54,7 +54,7 @@ def create_app(config=None, database=None, launch=None):
     cipher = Fernet(key.encode())
     codes = {slug: app.config.get('ACCESS_CODE_' + slug.upper()) or os.environ.get('ACCESS_CODE_' + slug.upper(), '') for slug in PROFILES}
     if any(len(code) < 4 or len(code) > 128 for code in codes.values()):
-        raise ValueError('Définissez les trois ACCESS_CODE_* avec au moins quatre caractères.')
+        raise ValueError('Définissez les ACCESS_CODE_* de chaque espace avec 4 à 128 caractères.')
     origin = app.config.get('PUBLIC_BASE_URL') or os.environ.get('PUBLIC_BASE_URL') or os.environ.get('RENDER_EXTERNAL_URL', '')
     parsed = urlsplit(origin)
     if parsed.scheme != 'https' or not parsed.netloc or parsed.path not in ('', '/') or parsed.query or parsed.fragment:

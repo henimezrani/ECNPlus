@@ -26,9 +26,14 @@ class Access:
     @classmethod
     def local(cls):
         path = PROJECT / 'access-codes.json'
-        codes = json.loads(path.read_text()) if path.is_file() else dict(zip(PROFILES, ['1111', '2222', '3333']))
-        if set(codes) != set(PROFILES) or any(not isinstance(v, str) or not v for v in codes.values()):
-            raise ValueError('Configurez un code pour chacun des trois espaces.')
+        codes = {slug: str(i + 1) * 4 for i, slug in enumerate(PROFILES)}
+        if path.is_file():
+            configured = json.loads(path.read_text())
+            if not isinstance(configured, dict) or not set(configured).issubset(PROFILES):
+                raise ValueError('Vérifiez les espaces dans le fichier des codes d’accès.')
+            codes.update(configured)
+        if any(not isinstance(v, str) or not v for v in codes.values()):
+            raise ValueError('Configurez un code pour chaque espace.')
         return cls(codes)
 
     def digest(self, value):

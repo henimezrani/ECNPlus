@@ -37,7 +37,7 @@ def prepare():
         raise ValueError('Ajoutez les deux URL Neon dans .env avant de préparer le déploiement.')
     Fernet(values['TOKEN_ENCRYPTION_KEY'].encode())
     if len(values['SESSION_SECRET']) < 32 or any(not 4 <= len(values['ACCESS_CODE_' + slug.upper()]) <= 128 for slug in PROFILES):
-        raise ValueError('Vérifiez la clé de session et les trois codes d’accès avant le déploiement.')
+        raise ValueError('Vérifiez la clé de session et les codes d’accès avant le déploiement.')
     update_env({key: values[key] for key in required}, PROJECT / 'deploy.env')
     print('Private deploy.env is ready for Render. Existing settings and keys were preserved; no credentials were printed.')
 

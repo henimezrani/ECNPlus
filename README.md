@@ -16,7 +16,7 @@ python3 -m ecnplus configure
 python3 -m ecnplus serve
 ```
 
-Open **http://127.0.0.1:8765** and leave the terminal running. The home page lets you choose Yasmine, Houssein, or Autre. Press Ctrl+C to stop the dashboard. You can choose another port with `python3 -m ecnplus serve --port 8766`. It binds only to this computer's loopback address.
+Open **http://127.0.0.1:8765** and leave the terminal running. The home page lets you choose Yasmine, Houssein, Autre, or Thabet. Press Ctrl+C to stop the dashboard. You can choose another port with `python3 -m ecnplus serve --port 8766`. It binds only to this computer's loopback address.
 
 On this Mac, you can also double-click **Start Dashboard.command** in Finder to launch it from the correct folder.
 
@@ -25,7 +25,7 @@ On this Mac, you can also double-click **Start Dashboard.command** in Finder to 
 1. Install [GitHub Desktop](https://desktop.github.com/) (which includes Git) and [Python 3.10 or newer](https://www.python.org/downloads/windows/). In the Python installer, enable the Python launcher (`py`). Install Google Chrome if it is not already present.
 2. In GitHub Desktop, choose **File → Clone repository**, enter `https://github.com/henimezrani/ECNPlus.git`, and choose a private location in her Windows user folder, such as `Documents\ECN Companion`. The repository contains the application only; it does not include an ECNPlus token or anyone's saved study history.
 3. Double-click **Start Dashboard.bat** in the cloned folder. On first launch, it checks for Tunisia time-zone data and installs the small `tzdata` package if needed; this step requires an internet connection. It starts the local server and opens Chrome at **http://127.0.0.1:8765/**. Leave the terminal window open while using the dashboard. If Chrome is not installed, Windows opens the default browser instead. If automatic setup cannot install `tzdata`, open Command Prompt in the project folder and run `py -3 -m pip install --user -r requirements-windows.txt`.
-4. Open her profile at **/yasmine**, **/houssein**, or **/autre**. In **Paramètres → Connexion à ECNPlus**, paste that user's complete Authorization value and choose **Synchroniser**. Repeat for each profile that needs data. Each profile stores its own token, settings, and study history on this computer. The first collection can take several minutes. Replace a profile's token in its Settings if it expires.
+4. Open her profile at **/yasmine**, **/houssein**, **/autre**, or **/thabet**. In **Paramètres → Connexion à ECNPlus**, paste that user's complete Authorization value and choose **Synchroniser**. Repeat for each profile that needs data. Each profile stores its own token, settings, and study history on this computer. The first collection can take several minutes. Replace a profile's token in its Settings if it expires.
 
 Keep the cloned project folder in her own Windows profile rather than a shared/public folder. Profile data is stored separately under `%LOCALAPPDATA%\ECN Companion\profiles\<profile>`; Windows permissions come from the account's access-control list. The app does not set Unix-style owner-only file modes on Windows. These profiles are convenience separation, not login security: anyone who can use this Windows account can open each profile and its dashboard. The server listens only on this computer, not the local network.
 
@@ -33,7 +33,7 @@ To copy the Authorization value, open an authenticated ECNPlus page, open Develo
 
 ## Dashboard
 
-- The home page has three independent spaces: **Yasmine** (`/yasmine`), **Houssein** (`/houssein`), and **Autre** (`/autre`). Each has its own saved study history, reading settings, and ECNPlus token. A simple access-code screen opens each space; no account registration is required.
+- The home page has four independent spaces: **Yasmine** (`/yasmine`), **Houssein** (`/houssein`), **Autre** (`/autre`), and **Thabet** (`/thabet`). Each has its own saved study history, reading settings, and ECNPlus token. A simple access-code screen opens each space; no account registration is required.
 - Overview totals and all course cards show completed series and answered questions for every configured reading and overall. Modules and university/year statistics stay out of the main view.
 - Search accepts French names with or without accents. Choose a focus reading to filter courses with activity, no activity, or unfinished series; sort by name, answered questions, or completed series.
 - Click a course to see its attempts, start dates in Tunisia time, actual answered counts, reading assignments and completion. Reading tabs filter these details. Repeated attempts within one reading are retained for reference, with only the highest count contributing to totals.
@@ -45,9 +45,9 @@ The server serves only the dashboard's static assets and explicit API routes. It
 
 ### Simple access codes
 
-In local mode, copy `access-codes.example.json` to the private, ignored `access-codes.json` file and edit its three values. Without this file the defaults are **1111**, **2222**, and **3333** in profile order. Restart the local server after changing codes. Choose **Verrouiller mon espace** to close its session. Codes are no longer shipped in JavaScript.
+In local mode, copy `access-codes.example.json` to the private, ignored `access-codes.json` file and edit its values. Without this file the defaults are **1111**, **2222**, **3333**, and **4444** in profile order. Existing local code files keep their configured codes; missing profiles use their local default. Restart the local server after changing codes. Choose **Verrouiller mon espace** to close its session. Codes are no longer shipped in JavaScript.
 
-In hosted mode, the three codes come from the Render `ACCESS_CODE_*` variables. HTTPS cookies and a stable server secret preserve sessions across restarts. See [DEPLOYMENT.md](DEPLOYMENT.md). The codes do not replace anyone's ECNPlus token.
+In hosted mode, the access codes come from the Render `ACCESS_CODE_*` variables. HTTPS cookies and a stable server secret preserve sessions across restarts. See [DEPLOYMENT.md](DEPLOYMENT.md). The codes do not replace anyone's ECNPlus token.
 
 You can also keep using the collector without the dashboard:
 

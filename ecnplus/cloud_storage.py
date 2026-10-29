@@ -45,17 +45,19 @@ class Database:
                                connect_timeout=15, row_factory=dict_row)
 
     def migrate(self):
-        source = (PROJECT / 'migrations' / '001_hosted.sql').read_text()
-        digest = hashlib.sha256(source.encode()).hexdigest()
         with self.connect(direct=True) as db, db.transaction():
             db.execute('SELECT pg_advisory_xact_lock(%s)', (lock_key('schema'),))
             db.execute('CREATE TABLE IF NOT EXISTS ecn_schema (version integer PRIMARY KEY, digest text NOT NULL)')
-            previous = db.execute('SELECT digest FROM ecn_schema WHERE version=1').fetchone()
-            if previous and previous['digest'] != digest:
-                raise ValueError('La migration existante a été modifiée. Ajoutez une nouvelle migration.')
-            if not previous:
-                db.execute(source, prepare=False)
-                db.execute('INSERT INTO ecn_schema VALUES (1, %s)', (digest,))
+            for path in sorted((PROJECT / 'migrations').glob('[0-9][0-9][0-9]_*.sql')):
+                version = int(path.name.split('_', 1)[0])
+                source = path.read_text()
+                digest = hashlib.sha256(source.encode()).hexdigest()
+                previous = db.execute('SELECT digest FROM ecn_schema WHERE version=%s', (version,)).fetchone()
+                if previous and previous['digest'] != digest:
+                    raise ValueError('La migration existante a été modifiée. Ajoutez une nouvelle migration.')
+                if not previous:
+                    db.execute(source, prepare=False)
+                    db.execute('INSERT INTO ecn_schema VALUES (%s, %s)', (version, digest))
             settings = read_settings(PROJECT / 'readings.json')
             for slug in PROFILES:
                 db.execute('INSERT INTO ecn_profiles(slug, settings) VALUES (%s, %s) ON CONFLICT DO NOTHING',

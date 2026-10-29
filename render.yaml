@@ -22,3 +22,5 @@ services:
         sync: false
       - key: ACCESS_CODE_AUTRE
         sync: false
+      - key: ACCESS_CODE_THABET
+        sync: false

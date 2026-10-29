@@ -9,6 +9,7 @@ PROFILES = {
     'yasmine': 'Yasmine',
     'houssein': 'Houssein',
     'autre': 'Autre',
+    'thabet': 'Thabet',
 }
 
 
