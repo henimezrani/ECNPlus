@@ -22,3 +22,11 @@ Ad-hoc scripts outside this repository verified the following against a disposab
 Additional local checks passed: Python and JavaScript syntax, installed dependency consistency, stdlib HTTP access/profile isolation/logout, and updating the standalone token without deleting unrelated `.env` settings. The actual Gunicorn WSGI entrypoint started with Render-style environment variables and served its health check and profile HTML. Browser checks with an isolated empty local profile confirmed wrong-code feedback, successful opening, session persistence on reload and locking the space. No test files were added to the repository.
 
 These are implementation and self-verification results, not an independent review or a Render production acceptance. A real hosted ECNPlus refresh and iPad/Safari acceptance remain to be performed after the Render service is created. The deployment guide documents free-service sleep and manual checkpoint resumption.
+
+## Live deployment verification — 29 October 2026
+
+Render deploy `dep-dbhra5jl550s73dvkn90` reached `live` from application commit `c5239ea7253242636782fd8ff687cdb92f1c5c2b`. The service is on the Free plan in Frankfurt, with the prepared private environment settings and the default TCP readiness check. The public HTTP `/healthz` endpoint also returns success.
+
+Live HTTPS checks passed for all three profiles: unauthorized API reads are refused; the configured code establishes a secure profile session; another profile remains inaccessible; logout closes access. The deployed imported history matches the local course summaries and reading totals exactly. The other profiles return their expected empty state. A live course-detail response was also verified. Browser verification loaded the course cards with no reported console warnings or errors. No tokens or reading settings were changed during these checks.
+
+An actual new ECNPlus collection from Render and physical iPad/Safari acceptance remain user checks after supplying a current token. Deployment used the Render deploy skill and connected Render tools; the checked-in Blueprint is a reference rather than an active Blueprint-managed resource.

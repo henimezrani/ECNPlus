@@ -2,6 +2,14 @@
 
 Le site et son API tournent dans **un seul service web Render Free**. Neon conserve les données des trois espaces, les paramètres des lectures, les points de reprise et les jetons ECNPlus chiffrés. Aucun ordinateur personnel ne doit rester allumé. L’iPad accède au site dans Safari ; il peut aussi l’ajouter à l’écran d’accueil.
 
+## Déploiement actuel
+
+Le service est en ligne sur **https://ecn-companion.onrender.com** dans le workspace Render confirmé par le propriétaire. Il utilise le plan **Free**, la région **Frankfurt**, le dépôt `henimezrani/ECNPlus` et la branche `main`. Les espaces sont accessibles à `/yasmine`, `/houssein` et `/autre`.
+
+Ce service a été créé directement avec l’intégration Render. Sa configuration active et ses sept variables privées sont gérées dans [Render Dashboard](https://dashboard.render.com/web/srv-dbhra4rl550s73dvklc0). Le fichier `render.yaml` est une référence de recréation ; aucun Blueprint ne le synchronise automatiquement avec ce service. Ne pas créer un deuxième service pour terminer cette installation. Le service utilise le contrôle TCP Render par défaut ; son endpoint HTTP `/healthz` a également été vérifié publiquement.
+
+L’historique local et les paramètres de Yasmine ont été importés et comparés au tableau de bord déployé. Les deux autres espaces sont prêts, sans historique. Aucun jeton ECNPlus n’a été importé. Les étapes de préparation ci-dessous servent à une nouvelle installation ou à une recréation ; elles ne sont pas à refaire pour utiliser le site actuel.
+
 ## Préparer la configuration privée
 
 Cette étape se fait une seule fois sur l’ordinateur qui possède les données locales. Ne partagez et ne publiez pas les fichiers `.env`, `deploy.env`, `access-codes.json` ou les dossiers de données.
