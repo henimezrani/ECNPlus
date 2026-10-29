@@ -1654,3 +1654,19 @@ dialog h2
         scroll-behavior:auto!important
     }
 }
+.profile-chip{margin:1rem .8rem .25rem;padding:.7rem .8rem;border:1px solid rgba(255,255,255,.13);border-radius:12px;color:#fff;font-size:.95rem;font-weight:700;overflow-wrap:anywhere}
+.profile-switch{display:block;margin:0 .8rem;color:#cbd7d1;font-size:.78rem;text-decoration:none}
+.profile-switch:hover{text-decoration:underline}
+.profile-chooser-page{min-height:100vh;display:grid;place-items:center;background:radial-gradient(ellipse at 50% -5%,#e4eee9 0,transparent 58%),#f6f8f6;padding:1.5rem}
+.profile-chooser{width:min(100%,34rem);padding:clamp(1.5rem,5vw,3rem);background:#fff;border:1px solid #e3e9e5;border-radius:24px;box-shadow:0 24px 70px rgba(31,62,49,.1)}
+.chooser-brand{display:inline-flex;align-items:center;gap:.65rem;color:#213a30;text-decoration:none;font-size:1.15rem;font-weight:800;margin-bottom:2.7rem}
+.chooser-brand .brand-mark{display:grid;place-items:center;width:2.7rem;height:2.7rem;border-radius:13px;background:#254d40;color:#fff}
+.chooser-brand .brand-mark .icon{width:1.35rem;height:1.35rem}
+.chooser-brand .brand-sub{margin-left:.2rem;color:#77867e;font-weight:600}
+.profile-chooser .eyebrow{margin:0 0 .6rem;color:#5f786b;font-size:.73rem;font-weight:800;letter-spacing:.12em}
+.profile-chooser h1{margin:0;color:#213a30;font-size:clamp(1.8rem,6vw,2.5rem);letter-spacing:-.04em}
+.chooser-intro{margin:.8rem 0 1.6rem;color:#68766e;line-height:1.6}
+.profile-options{display:grid;gap:.7rem}
+.profile-options a{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.1rem;border:1px solid #e1e9e4;border-radius:14px;color:#254d40;text-decoration:none;font-weight:700;transition:background .15s,border-color .15s,transform .15s}
+.profile-options a:hover{transform:translateY(-1px);background:#f2f7f4;border-color:#b9d0c3}
+.local-access-note{margin:1.5rem 0 0;padding-top:1rem;border-top:1px solid #edf0ee;color:#7b8580;font-size:.78rem;line-height:1.5}

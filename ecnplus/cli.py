@@ -289,7 +289,9 @@ def print_result(snapshot, result, collection):
 
 def sync(args, settings):
     data_dir = Path(args.data_dir).resolve()
-    client = Client(authorization(PROJECT), args.timeout, args.retries)
+    client = Client(authorization(args.credential_dir,
+                                 allow_environment=not args.ignore_environment_token),
+                    args.timeout, args.retries)
     with lock(data_dir):
         # Verify the account before mixing any observations into its local store.
         profile = client.get('auth/profile')
@@ -393,6 +395,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='Collect and report local ECNPlus study data (GET requests only).')
     parser.add_argument('--data-dir', default=str(PROJECT / 'data'), help='Private local data directory')
     parser.add_argument('--settings', default=str(PROJECT / 'readings.json'), help='Editable reading boundaries and reviewed attempt overrides')
+    parser.add_argument('--credential-dir', default=str(PROJECT), help='Directory containing the local .env credential file')
+    parser.add_argument('--ignore-environment-token', action='store_true', help='Use only the selected local credential file')
+    parser.add_argument('--profiles-dir', help='Local root directory for the three dashboard profiles')
     commands = parser.add_subparsers(dest='command', required=True)
     commands.add_parser('configure', help='Save/replace the credential using a hidden prompt')
     sync_parser = commands.add_parser('sync', help='Refresh the complete catalogue and all available series histories')
@@ -422,7 +427,7 @@ def main(argv=None):
             if not 0 <= args.port <= 65535:
                 raise ValueError('--port must be between 0 and 65535')
             from .web import serve
-            return serve(args.data_dir, args.settings, args.port)
+            return serve(args.data_dir, args.settings, args.port, args.profiles_dir)
         settings = read_settings(args.settings)
         if args.command == 'sync':
             if args.timeout < 1 or args.timeout > 120:

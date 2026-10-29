@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#254d40">
   <meta name="ecnplus-token" content="__LOCAL_CSRF__">
-  <title>ECN Companion · Suivi des révisions</title>
+  <meta name="ecnplus-profile" content="__PROFILE_SLUG__">
+  <meta name="ecnplus-profile-name" content="__PROFILE_NAME__">
+  <title>ECN Companion · __PROFILE_NAME__</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
   <script src="/app.js" defer></script>
@@ -28,8 +30,10 @@
   </svg>
 
   <aside class="sidebar">
-    <a class="brand" href="#overview" aria-label="Accueil ECN Companion"><span class="brand-mark"><svg class="icon"><use href="#i-plus"/></svg></span><span>ECN<span class="brand-sub">Companion</span></span></a>
+    <a class="brand" href="/" aria-label="Choisir un espace ECN Companion"><span class="brand-mark"><svg class="icon"><use href="#i-plus"/></svg></span><span>ECN<span class="brand-sub">Companion</span></span></a>
     <div class="workspace-label">VOTRE ESPACE DE RÉVISION</div>
+    <div class="profile-chip" id="profile-name">__PROFILE_NAME__</div>
+    <a class="profile-switch" href="/">Changer d’espace</a>
     <nav aria-label="Navigation principale">
       <a class="nav-item active" href="#overview"><svg class="icon"><use href="#i-grid"/></svg>Vue d’ensemble</a>
       <a class="nav-item" href="#courses"><svg class="icon"><use href="#i-book"/></svg>Mes cours<span class="nav-count" id="nav-count">—</span></a>

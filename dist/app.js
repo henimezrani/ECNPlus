@@ -2,6 +2,9 @@
 
 const $ = id => document.getElementById(id);
 const csrf = document.querySelector('meta[name="ecnplus-token"]').content;
+const profileSlug = document.querySelector('meta[name="ecnplus-profile"]').content;
+const profileName = document.querySelector('meta[name="ecnplus-profile-name"]').content;
+const apiPrefix = `/${profileSlug}`;
 const number = value => new Intl.NumberFormat('fr-TN').format(value ?? 0);
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
@@ -13,7 +16,7 @@ const state = {data: null, focus: null, detail: null, detailReading: 'all', poll
 async function api(path, body) {
   let response;
   try {
-    response = await fetch(path, {cache: 'no-store', method: body === undefined ? 'GET' : 'POST',
+    response = await fetch(apiPrefix + path, {cache: 'no-store', method: body === undefined ? 'GET' : 'POST',
       headers: body === undefined ? {} : {'Content-Type': 'application/json', 'X-ECNPlus-Token': csrf},
       ...(body === undefined ? {} : {body: JSON.stringify(body)})});
   } catch {
@@ -115,6 +118,8 @@ function renderCourses() {
 async function load() {
   const data = await api('/api/dashboard');
   state.data = data;
+  $('profile-name').textContent = data.profile?.name || profileName;
+  document.title = `ECN Companion · ${data.profile?.name || profileName}`;
   const readings = activeReadings();
   if (!readings.some(r => r.id === state.focus)) state.focus = data.current_reading;
   $('focus-reading').innerHTML = readings.map(r => `<option value="${r.id}">${escapeHTML(r.name)}</option>`).join('');
@@ -128,6 +133,9 @@ async function load() {
   const checkpoint = data.checkpoint;
   if (data.settings_changed) {
     notice('Les dates de lecture ont changé. Appliquez-les pour mettre à jour les totaux enregistrés.', false, {label:'Appliquer les dates', run: () => startSettings(data.settings.readings).catch(error => notice(error.message, true))});
+  } else if (!data.credential_configured) {
+    notice('Configurez le jeton ECNPlus de cet espace avant la première synchronisation.', false,
+      {label:'Configurer mon jeton', run:openSettings});
   } else if (checkpoint && checkpoint.status !== 'complete' && data.job.status !== 'running') {
     notice('La dernière synchronisation est incomplète. Votre progression enregistrée reste disponible.', true, {label:'Reprendre la synchronisation', run: () => startSync(true)});
   } else if (data.summary && !data.collection.phase_ready) {
@@ -153,7 +161,7 @@ function renderJob(job) {
   if (state.data) state.data.job = job;
   const running = job.status === 'running';
   $('job-panel').hidden = !running;
-  $('sync-button').disabled = running;
+  $('sync-button').disabled = running || !state.data?.credential_configured;
   $('save-settings').disabled = running;
   $('save-credential').disabled = running;
   $('sync-button').querySelector('span').textContent = running ? (job.kind === 'settings' ? 'Recalcul en cours…' : 'Synchronisation…') : 'Synchroniser';

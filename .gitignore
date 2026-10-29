@@ -1,9 +1,12 @@
+# Credentials and local ECNPlus study data
 .env
 data/
-__pycache__/
-*.pyc
-.DS_Store
-# Original evidence can contain account information or credentials.
 *.har
 *.xlsx
-Screenshot*.png
+
+# Python and local tooling
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store

@@ -23,8 +23,8 @@ class AuthError(ApiError):
     pass
 
 
-def authorization(project):
-    value = os.environ.get("ECNPLUS_AUTHORIZATION")
+def authorization(project, allow_environment=True):
+    value = os.environ.get("ECNPLUS_AUTHORIZATION") if allow_environment else None
     if value is None:
         path = Path(project) / ".env"
         if path.exists():

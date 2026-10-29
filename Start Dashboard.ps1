@@ -22,7 +22,7 @@ try {
     $ready = $false
     try {
         $page = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 2
-        $ready = $page.StatusCode -eq 200 -and $page.Content.Contains('ecnplus-token')
+        $ready = $page.StatusCode -eq 200 -and $page.Content.Contains('/yasmine/')
     } catch { }
 
     if (-not $ready) {
@@ -73,7 +73,7 @@ try {
             }
             try {
                 $page = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 2
-                if ($page.StatusCode -eq 200 -and $page.Content.Contains('ecnplus-token')) {
+                if ($page.StatusCode -eq 200 -and $page.Content.Contains('/yasmine/')) {
                     $ready = $true
                     break
                 }
