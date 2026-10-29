@@ -5,6 +5,9 @@ const csrf = document.querySelector('meta[name="ecnplus-token"]').content;
 const profileSlug = document.querySelector('meta[name="ecnplus-profile"]').content;
 const profileName = document.querySelector('meta[name="ecnplus-profile-name"]').content;
 const apiPrefix = `/${profileSlug}`;
+// Simple UI gate only. Edit these initial codes here; they are visible in the page source.
+const spaceAccessCodes = Object.freeze({yasmine: '1111', houssein: '2222', autre: '3333'});
+const accessStorageKey = `ecnplus-access:${profileSlug}`;
 const number = value => new Intl.NumberFormat('fr-TN').format(value ?? 0);
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
@@ -285,6 +288,40 @@ $('credential-form').addEventListener('submit', async event => {
   finally {$('save-credential').disabled=state.data?.job?.status === 'running';}
 });
 document.addEventListener('keydown', event => {
+  if (document.body.classList.contains('space-locked')) return;
   if (event.key === '/' && !['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName) && !document.querySelector('dialog[open]')) {event.preventDefault(); $('search').focus();}
 });
-load().catch(error => {notice(error.message, true, {label:'Réessayer', run:() => load().catch(e => notice(e.message,true))}); $('save-state').textContent='Impossible de charger les données enregistrées'; $('overview-stats').innerHTML=''; $('course-grid').setAttribute('aria-busy','false');});
+
+function unlockSpace() {
+  if (!document.body.classList.contains('space-locked')) return;
+  $('access-code').value = '';
+  $('access-gate').hidden = true;
+  document.body.classList.remove('space-locked');
+  $('lock-space').focus();
+  load().catch(error => {notice(error.message, true, {label:'Réessayer', run:() => load().catch(e => notice(e.message,true))}); $('save-state').textContent='Impossible de charger les données enregistrées'; $('overview-stats').innerHTML=''; $('course-grid').setAttribute('aria-busy','false');});
+}
+
+$('access-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const code = $('access-code').value.trim();
+  if (!spaceAccessCodes[profileSlug] || code !== spaceAccessCodes[profileSlug]) {
+    $('access-error').hidden = false;
+    $('access-code').setAttribute('aria-invalid', 'true');
+    $('access-code').focus();
+    $('access-code').select();
+    return;
+  }
+  try { sessionStorage.setItem(accessStorageKey, code); } catch { /* Still usable when browser storage is disabled. */ }
+  unlockSpace();
+});
+$('access-code').addEventListener('input', () => {
+  $('access-error').hidden = true;
+  $('access-code').removeAttribute('aria-invalid');
+});
+$('lock-space').addEventListener('click', () => {
+  try { sessionStorage.removeItem(accessStorageKey); } catch { /* No stored unlock to clear. */ }
+  window.location.reload();
+});
+try {
+  if (spaceAccessCodes[profileSlug] && sessionStorage.getItem(accessStorageKey) === spaceAccessCodes[profileSlug]) unlockSpace();
+} catch { /* Show the code form when browser storage is disabled. */ }

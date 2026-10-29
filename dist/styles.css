@@ -1670,3 +1670,14 @@ dialog h2
 .profile-options a{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.1rem;border:1px solid #e1e9e4;border-radius:14px;color:#254d40;text-decoration:none;font-weight:700;transition:background .15s,border-color .15s,transform .15s}
 .profile-options a:hover{transform:translateY(-1px);background:#f2f7f4;border-color:#b9d0c3}
 .local-access-note{margin:1.5rem 0 0;padding-top:1rem;border-top:1px solid #edf0ee;color:#7b8580;font-size:.78rem;line-height:1.5}
+.space-locked> :not(.access-gate):not(.icon-library){display:none!important}
+.access-gate{min-height:100vh;display:grid;place-items:center;padding:1.5rem}
+.access-card h1{margin:0;font-size:clamp(1.7rem,6vw,2.3rem)}
+.access-card .eyebrow{margin:0 0 1rem;color:var(--muted);font-size:.75rem;letter-spacing:.12em}
+.access-card form{display:grid;gap:.8rem}
+.access-card label{font-weight:600}
+.access-card input{width:100%;padding:.85rem 1rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-size:1.2rem;letter-spacing:.15em}
+.access-card input[aria-invalid="true"]{border-color:#b34f45}
+.access-card .button{justify-content:center}
+.access-back{display:inline-block;margin-top:1.5rem;font-size:.85rem;color:var(--muted)}
+.lock-space{margin-top:.65rem;padding:0;background:none;border:0;text-align:left;cursor:pointer}

@@ -29,14 +29,20 @@ To copy the Authorization value, open an authenticated ECNPlus page, open Develo
 
 ## Dashboard
 
-- The home page has three independent spaces: **Yasmine** (`/yasmine`), **Houssein** (`/houssein`), and **Autre** (`/autre`). Each has its own saved study history, reading settings, and ECNPlus token. No username or password is required; anyone on the same computer can open all three.
+- The home page has three independent spaces: **Yasmine** (`/yasmine`), **Houssein** (`/houssein`), and **Autre** (`/autre`). Each has its own saved study history, reading settings, and ECNPlus token. A simple access-code screen opens each space; no account registration is required.
 - Overview totals and all course cards show completed series and answered questions for every configured reading and overall. Modules and university/year statistics stay out of the main view.
 - Search accepts French names with or without accents. Choose a focus reading to filter courses with activity, no activity, or unfinished series; sort by name, answered questions, or completed series.
 - Click a course to see its attempts, start dates in Tunisia time, actual answered counts, reading assignments and completion. Reading tabs filter these details. Repeated attempts within one reading are retained for reference, with only the highest count contributing to totals.
 - **Synchroniser** updates the catalogue and histories in the background, with visible progress. The existing totals remain usable until the job finishes. An incomplete sync offers **Reprendre la synchronisation**, and expired tokens can be replaced in **Paramètres**. Opening the page does not trigger any ECNPlus requests.
 - **Paramètres → Enregistrer et recalculer** changes reading dates and recalculates the cached dataset offline. Fourth and fifth readings appear when their start dates are configured. A failed calculation preserves the previous settings and dataset.
 
-The server serves only the dashboard's static assets and explicit API routes. It does not expose profile `.env` files, raw databases, project files, or directory listings. Settings, token and sync actions require the page's local request token and same-origin requests. The ECNPlus credential is never returned to the browser. These protections guard the local app's requests; the three profile URLs are not authentication.
+The server serves only the dashboard's static assets and explicit API routes. It does not expose profile `.env` files, raw databases, project files, or directory listings. Settings, token and sync actions require the page's local request token and same-origin requests. The ECNPlus credential is never returned to the browser. These protections guard the local app's requests; the three profile URLs and browser-only access-code screen are not server authentication.
+
+### Simple access codes
+
+Initial codes are **1111** for Yasmine, **2222** for Houssein, and **3333** for Autre. Edit the `spaceAccessCodes` object near the top of `dist/app.js` to change them, then reload the page. A code change also invalidates the previously remembered code. The current browser tab remembers the unlocked space using `sessionStorage`. Choose **Verrouiller mon espace** to clear that space's remembered code and return to its code screen. If browser storage is disabled, entering a code still works, but a page reload asks for it again.
+
+This is deliberately a simple UI check: the codes are visible in the downloaded JavaScript, and the API remains accessible without this code. It does not change or replace anyone's ECNPlus token.
 
 You can also keep using the collector without the dashboard:
 
