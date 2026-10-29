@@ -3,6 +3,7 @@
 data/
 *.har
 *.xlsx
+Screenshot*.png
 
 # Python and local tooling
 __pycache__/
