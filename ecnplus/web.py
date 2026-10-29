@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 
 from .api import authorization
 from .access import Access
+from .calendar import build_calendar
 from .profiles import default_profiles_root, initialize_profiles
 from .storage import Store, lock, now, write_json
 from .summary import is_complete, read_settings, validate_settings
@@ -117,9 +118,9 @@ class Dashboard:
         course = next((c for c in snapshot['summary']['courses'] if c['id'] == course_id), None)
         if not course:
             raise LookupError('Cours introuvable.')
+        self.details(snapshot)
         with self.mutex:
-            if 'details' not in snapshot:
-                snapshot['details'] = json.loads((snapshot['folder'] / 'details.json').read_text(encoding='utf-8'))
+            if 'dataset' not in snapshot:
                 snapshot['dataset'] = json.loads((snapshot['folder'] / 'dataset.json').read_text(encoding='utf-8'))
         dataset, details = snapshot['dataset'], snapshot['details']
         series = {s['id']: s for s in dataset['series'] if s['course_id'] == course_id}
@@ -140,6 +141,21 @@ class Dashboard:
                              'exclusion_reason': attempt['exclusion_reason'], 'source_url': url})
         attempts.sort(key=lambda a: a['started_at'] or '', reverse=True)
         return {'course': course, 'attempts': attempts, 'settings': snapshot['summary']['settings']}
+
+    def details(self, snapshot):
+        with self.mutex:
+            if 'details' not in snapshot:
+                snapshot['details'] = json.loads((snapshot['folder'] / 'details.json').read_text(encoding='utf-8'))
+            return snapshot['details']
+
+    def calendar(self):
+        snapshot = self.snapshot()
+        summary = snapshot['summary'] if snapshot else None
+        result = build_calendar(self.details(snapshot)['attempts'] if snapshot else [],
+                                summary['courses'] if summary else [],
+                                summary['settings'] if summary else self.settings())
+        return {**result, 'has_data': snapshot is not None,
+                'provisional': bool(snapshot and not snapshot['collection'].get('phase_ready'))}
 
     def job_state(self):
         with self.mutex:
@@ -340,6 +356,8 @@ def handler_for(apps):
                     return self.send(401, {'error': 'Saisissez le code de cet espace.'})
                 if rest == '/api/dashboard':
                     return self.send(200, app.payload())
+                if rest == '/api/calendar':
+                    return self.send(200, app.calendar())
                 if rest == '/api/job':
                     return self.send(200, app.job_state())
                 if rest.startswith('/api/courses/'):

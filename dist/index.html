@@ -32,6 +32,7 @@
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></symbol>
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Zm0 0v14"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/></symbol>
     <symbol id="i-settings" viewBox="0 0 24 24"><path d="m9 4 1-2h4l1 2 3 2 2 .2 2 3.5-1 1.8v3l1 1.8-2 3.5-2 .2-3 2-1 2h-4l-1-2-3-2-2-.2-2-3.5 1-1.8v-3L2 8.7l2-3.5L6 5Z" transform="translate(1 0) scale(.91)"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 8a8 8 0 0 0-14-3L3 8m0-5v5h5M4 16a8 8 0 0 0 14 3l3-3m0 5v-5h-5"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
@@ -53,6 +54,7 @@
     <nav aria-label="Navigation principale">
       <a class="nav-item active" href="#overview"><svg class="icon"><use href="#i-grid"/></svg>Vue d’ensemble</a>
       <a class="nav-item" href="#courses"><svg class="icon"><use href="#i-book"/></svg>Mes cours<span class="nav-count" id="nav-count">—</span></a>
+      <a class="nav-item" href="#calendar" aria-label="Calendrier"><svg class="icon"><use href="#i-calendar"/></svg>Calendrier</a>
       <button class="nav-item" data-settings><svg class="icon"><use href="#i-settings"/></svg>Paramètres</button>
     </nav>
     <div class="sidebar-note"><span class="leaf-mark"><svg class="icon"><use href="#i-leaf"/></svg></span><p>Une lecture<br>à la fois.</p><span>Chaque progrès compte.</span></div>
@@ -60,13 +62,16 @@
   </aside>
 
   <main id="overview">
-    <header class="topbar"><span class="breadcrumb">Mon espace de révision <span>/</span> <strong>Vue d’ensemble</strong></span><div class="topbar-actions"><button class="button secondary compact" data-settings><svg class="icon"><use href="#i-settings"/></svg><span>Paramètres</span></button><button class="button primary" id="sync-button"><svg class="icon"><use href="#i-sync"/></svg><span>Synchroniser</span></button></div></header>
+    <header class="topbar"><span class="breadcrumb">Mon espace de révision <span>/</span> <strong id="view-label">Vue d’ensemble</strong></span><div class="topbar-actions"><button class="button secondary compact" data-settings><svg class="icon"><use href="#i-settings"/></svg><span>Paramètres</span></button><button class="button primary" id="sync-button"><svg class="icon"><use href="#i-sync"/></svg><span>Synchroniser</span></button></div></header>
 
-    <section class="page-heading"><div><div class="eyebrow">VOTRE PROGRESSION EN UN COUP D’ŒIL</div><h1>Suivi des révisions<span class="title-dot">.</span></h1><p id="intro">Tous les cours et toutes les lectures réunis au même endroit.</p></div><div class="sync-stamp"><span class="saved-label"><span class="status-dot"></span><span id="save-state">Chargement des données enregistrées</span></span><span id="last-sync">Aucune synchronisation automatique à l’ouverture</span></div></section>
+    <section class="page-heading"><div><div class="eyebrow" id="page-eyebrow">VOTRE PROGRESSION EN UN COUP D’ŒIL</div><h1 id="page-title">Suivi des révisions<span class="title-dot">.</span></h1><p id="intro">Tous les cours et toutes les lectures réunis au même endroit.</p></div><div class="sync-stamp"><span class="saved-label"><span class="status-dot"></span><span id="save-state">Chargement des données enregistrées</span></span><span id="last-sync">Aucune synchronisation automatique à l’ouverture</span></div></section>
+
+    <nav class="view-tabs" aria-label="Affichage du suivi"><a href="#overview" data-view="dashboard" class="active"><svg class="icon"><use href="#i-book"/></svg>Cours</a><a href="#calendar" data-view="calendar"><svg class="icon"><use href="#i-calendar"/></svg>Calendrier</a></nav>
 
     <div id="notice" class="notice" role="status" hidden></div>
     <section id="job-panel" class="job-panel" aria-live="polite" hidden><div class="job-heading"><svg class="icon spinning"><use href="#i-sync"/></svg><strong id="job-message">Mise à jour des données…</strong><span id="job-count"></span></div><progress id="job-progress" aria-label="Progression de la mise à jour"></progress><p>Votre progression enregistrée reste disponible pendant la mise à jour.</p></section>
 
+    <div id="dashboard-view">
     <section class="overview-stats" id="overview-stats" aria-label="Progression par lecture"><div class="stat-card loading-card"></div><div class="stat-card loading-card"></div><div class="stat-card loading-card"></div><div class="stat-card loading-card"></div></section>
 
     <section id="courses" class="courses-section" aria-labelledby="courses-title">
@@ -76,7 +81,21 @@
       <div id="course-grid" class="course-grid" aria-busy="true"></div>
       <div class="empty-state" id="empty-state" hidden><span class="empty-icon"><svg class="icon"><use href="#i-book"/></svg></span><h3 id="empty-title">Aucun cours trouvé</h3><p id="empty-description">Essayez une autre recherche ou modifiez les filtres.</p><button class="button secondary" id="reset-filters">Effacer les filtres</button></div>
     </section>
-    <footer class="page-footer"><span>Prête pour votre prochaine lecture.</span><span>Une série est comptée une fois par lecture.</span></footer>
+    </div>
+    <section id="calendar" class="calendar-view" aria-labelledby="calendar-title" hidden>
+      <div class="section-heading"><div><h2 id="calendar-title">Votre activité au fil des jours</h2><p id="calendar-range">Les journées suivent l’heure de la Tunisie.</p></div><label class="focus-select" for="calendar-reading">Lecture <select id="calendar-reading"></select></label></div>
+      <p class="calendar-note">Une journée va de 5 h à 4 h 59 le lendemain. Toutes les questions d’une tentative sont rattachées à son jour de début.</p>
+      <p class="calendar-note">Une série est comptée une fois par jour, avec son meilleur nombre de réponses ce jour-là, même si elle est en cours. Une série refaite un autre jour apparaît à nouveau : les totaux peuvent donc différer de la vue des cours.</p>
+      <p id="calendar-status" class="calendar-status" role="status">Chargement du calendrier…</p><button id="calendar-retry" type="button" class="button secondary" hidden>Réessayer</button>
+      <div id="calendar-content" hidden>
+        <div class="calendar-stats" id="calendar-stats" aria-label="Activité de la lecture"></div>
+        <div class="calendar-monthbar"><button id="calendar-prev" class="button secondary compact" type="button" aria-label="Mois précédent">←</button><h3 id="calendar-month" aria-live="polite"></h3><button id="calendar-next" class="button secondary compact" type="button" aria-label="Mois suivant">→</button></div>
+        <div class="calendar-weekdays" aria-hidden="true"><span>Lun.</span><span>Mar.</span><span>Mer.</span><span>Jeu.</span><span>Ven.</span><span>Sam.</span><span>Dim.</span></div>
+        <div id="calendar-grid" class="calendar-grid" aria-label="Jours de la lecture"></div>
+        <section id="calendar-day-detail" class="calendar-day-detail" aria-labelledby="calendar-day-title"><h3 id="calendar-day-title"></h3><div id="calendar-day-content"></div></section>
+      </div>
+    </section>
+    <footer class="page-footer"><span>Prête pour votre prochaine lecture.</span><span id="footer-rule">Une série est comptée une fois par lecture.</span></footer>
   </main>
 
   <dialog id="course-dialog" class="course-dialog" aria-labelledby="detail-title"><div class="dialog-topline"><span class="eyebrow">DÉTAIL DU COURS</span><button class="icon-button" data-close="course-dialog" aria-label="Fermer le détail du cours"><svg class="icon"><use href="#i-close"/></svg></button></div><h2 id="detail-title">Détail du cours</h2><div id="detail-content"></div></dialog>

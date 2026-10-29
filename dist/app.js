@@ -11,7 +11,8 @@ const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}
 const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/œ/g, 'oe');
 const dateFormat = new Intl.DateTimeFormat('fr-TN', {timeZone: 'Africa/Tunis', day: 'numeric', month: 'short', year: 'numeric'});
 const syncFormat = new Intl.DateTimeFormat('fr-TN', {timeZone: 'Africa/Tunis', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
-const state = {data: null, focus: null, detail: null, detailReading: 'all', poll: null, toast: null, lastFinished: null};
+const state = {data: null, focus: null, detail: null, detailReading: 'all', poll: null, toast: null, lastFinished: null,
+  calendar:null, calendarLoading:false, calendarRequest:0, calendarReading:null, calendarMonth:null, calendarDay:null};
 
 async function api(path, body) {
   let response;
@@ -162,6 +163,116 @@ async function load() {
   renderJob(data.job);
   if (data.job.status === 'running') pollJob();
   if (data.job.status === 'failed') showJobFailure(data.job);
+  state.calendar = null;
+  state.calendarLoading = false;
+  state.calendarRequest++;
+  applyView();
+}
+
+const calendarDate = value => new Date(value + 'T12:00:00Z');
+const calendarLongDate = value => new Intl.DateTimeFormat('fr-TN', {timeZone:'UTC', weekday:'long', day:'numeric', month:'long', year:'numeric'}).format(calendarDate(value));
+
+function applyView() {
+  const calendar = window.location.hash === '#calendar';
+  $('dashboard-view').hidden = calendar;
+  $('calendar').hidden = !calendar;
+  $('view-label').textContent = calendar ? 'Calendrier' : 'Vue d’ensemble';
+  $('page-eyebrow').textContent = calendar ? 'VOTRE ACTIVITÉ AU FIL DES JOURS' : 'VOTRE PROGRESSION EN UN COUP D’ŒIL';
+  $('page-title').innerHTML = (calendar ? 'Calendrier des révisions' : 'Suivi des révisions') + '<span class="title-dot">.</span>';
+  $('intro').textContent = calendar ? 'Chaque journée de révision, cours par cours.' : state.data?.summary ? `${number(state.data.summary.courses.length)} cours. Toutes les lectures. Au même endroit.` : 'Tous les cours et toutes les lectures réunis au même endroit.';
+  $('footer-rule').textContent = calendar ? 'Les débuts avant 5 h sont rattachés à la veille.' : 'Une série est comptée une fois par lecture.';
+  document.querySelectorAll('[data-view]').forEach(link => {
+    const active = link.dataset.view === (calendar ? 'calendar' : 'dashboard');
+    link.classList.toggle('active', active);
+    if (active) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('.sidebar nav a').forEach(link => {
+    const active = link.hash === (calendar ? '#calendar' : window.location.hash === '#courses' ? '#courses' : '#overview');
+    link.classList.toggle('active', active);
+  });
+  if (calendar && state.data) {
+    if (state.calendar) renderCalendar();
+    else if (!state.calendarLoading) loadCalendar();
+  }
+}
+
+async function loadCalendar() {
+  const request = ++state.calendarRequest;
+  state.calendarLoading = true;
+  $('calendar-status').textContent = 'Chargement du calendrier…';
+  $('calendar-content').hidden = true;
+  $('calendar-retry').hidden = true;
+  try {
+    const data = await api('/api/calendar');
+    if (request !== state.calendarRequest) return;
+    state.calendar = data;
+    if (!data.readings.some(r => r.id === state.calendarReading)) {
+      state.calendarReading = state.data.current_reading;
+      state.calendarMonth = state.calendarDay = null;
+    }
+    $('calendar-reading').innerHTML = data.readings.map(r => `<option value="${escapeHTML(r.id)}">${escapeHTML(r.name)}</option>`).join('');
+    $('calendar-reading').value = state.calendarReading;
+    renderCalendar();
+  } catch (error) {
+    if (request !== state.calendarRequest) return;
+    $('calendar-status').textContent = error.message;
+    $('calendar-retry').hidden = false;
+  } finally {
+    if (request === state.calendarRequest) state.calendarLoading = false;
+  }
+}
+
+function renderCalendar() {
+  const data = state.calendar;
+  const reading = data?.readings.find(r => r.id === state.calendarReading);
+  if (!reading) return;
+  const start = reading.range_start, end = reading.range_end;
+  const available = data.has_data && start && start <= end;
+  $('calendar-content').hidden = !available;
+  $('calendar-status').textContent = !data.has_data ? 'Synchronisez vos données pour consulter votre calendrier.' : !available ? 'Aucune journée de révision disponible pour cette lecture.' : data.provisional ? 'Le calendrier présente l’activité enregistrée disponible. Certaines données restent à synchroniser ou à vérifier.' : 'Activité issue de la dernière synchronisation enregistrée.';
+  $('calendar-range').textContent = available ? `Du ${calendarLongDate(start)} au ${calendarLongDate(end)}` : 'Les journées suivent l’heure de la Tunisie.';
+  if (!available) return;
+  if (!state.calendarDay || state.calendarDay < start || state.calendarDay > end) {
+    state.calendarDay = data.study_today >= start && data.study_today <= end ? data.study_today : end;
+  }
+  if (!state.calendarMonth || state.calendarMonth < start.slice(0,7) || state.calendarMonth > end.slice(0,7)) {
+    state.calendarMonth = state.calendarDay.slice(0,7);
+  }
+  const totals = reading.totals;
+  $('calendar-stats').innerHTML = `<div><strong>${number(totals.active_days)}</strong><span>jours avec activité</span></div><div><strong>${number(totals.series)}</strong><span>séries travaillées</span></div><div><strong>${number(totals.questions)}</strong><span>questions répondues</span></div>`;
+  $('calendar-month').textContent = new Intl.DateTimeFormat('fr-TN', {timeZone:'UTC', month:'long', year:'numeric'}).format(calendarDate(state.calendarMonth + '-01'));
+  $('calendar-prev').disabled = state.calendarMonth <= start.slice(0,7);
+  $('calendar-next').disabled = state.calendarMonth >= end.slice(0,7);
+  const [year, month] = state.calendarMonth.split('-').map(Number);
+  const first = new Date(Date.UTC(year, month - 1, 1));
+  const count = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const offset = (first.getUTCDay() + 6) % 7;
+  const days = new Map(reading.days.map(d => [d.date, d]));
+  const cells = Array.from({length:offset}, () => '<span class="calendar-blank" aria-hidden="true"></span>');
+  for (let day = 1; day <= count; day++) {
+    const date = state.calendarMonth + '-' + String(day).padStart(2,'0');
+    const activity = days.get(date);
+    const enabled = date >= start && date <= end;
+    const current = date === data.study_today;
+    const label = calendarLongDate(date) + (enabled ? activity ? ` : ${activity.series} série${activity.series > 1 ? 's' : ''}, ${activity.questions} questions répondues` : ' : aucune activité enregistrée' : ' : hors de la période affichée');
+    cells.push(`<button type="button" class="calendar-day ${activity ? 'has-activity' : ''} ${date === state.calendarDay ? 'selected' : ''} ${current ? 'today' : ''}" data-day="${date}" aria-label="${escapeHTML(label)}" aria-pressed="${date === state.calendarDay}" ${enabled ? '' : 'disabled'}><span class="calendar-day-number"><time datetime="${date}">${day}</time>${current ? '<span class="calendar-today">Auj.</span>' : ''}</span>${enabled && activity ? `<span class="calendar-day-counts"><strong>${number(activity.series)} <span>série${activity.series > 1 ? 's' : ''}</span></strong><span>${number(activity.questions)} questions</span></span><span class="calendar-day-courses">${activity.courses.slice(0,2).map(c => `<span>${escapeHTML(c.name)}</span>`).join('')}${activity.courses.length > 2 ? `<span>+ ${number(activity.courses.length - 2)} autre${activity.courses.length > 3 ? 's' : ''}</span>` : ''}</span>` : enabled ? '<span class="calendar-no-activity">—</span>' : ''}</button>`);
+  }
+  $('calendar-grid').innerHTML = cells.join('');
+  const selected = days.get(state.calendarDay);
+  $('calendar-day-title').textContent = calendarLongDate(state.calendarDay);
+  $('calendar-day-content').innerHTML = selected ? `<p class="calendar-day-total">${number(selected.series)} séries travaillées · ${number(selected.questions)} questions répondues</p><div class="table-wrap"><table class="calendar-course-table"><thead><tr><th>Cours</th><th>Séries</th><th>Questions</th></tr></thead><tbody>${selected.courses.map(c => `<tr><td><button type="button" class="calendar-course-link" data-course="${escapeHTML(c.id)}">${escapeHTML(c.name)}</button></td><td>${number(c.series)}</td><td>${number(c.questions)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="detail-empty">Aucune activité enregistrée pour cette journée.</p>';
+  if (reading.starts_on && state.calendarDay < reading.starts_on) {
+    $('calendar-day-content').insertAdjacentHTML('beforeend', '<p class="calendar-note">Cette activité reste rattachée à la lecture sélectionnée. Son début avant 5 h la place sur le jour précédent dans le calendrier.</p>');
+  }
+}
+
+function moveCalendarMonth(delta) {
+  const [year, month] = state.calendarMonth.split('-').map(Number);
+  state.calendarMonth = new Date(Date.UTC(year, month - 1 + delta, 1)).toISOString().slice(0,7);
+  const reading = state.calendar.readings.find(r => r.id === state.calendarReading);
+  const first = state.calendarMonth + '-01';
+  state.calendarDay = reading.days.find(d => d.date.startsWith(state.calendarMonth))?.date || (first < reading.range_start ? reading.range_start : first);
+  renderCalendar();
 }
 
 function showJobFailure(job) {
@@ -277,6 +388,31 @@ document.querySelectorAll('[data-settings]').forEach(button => button.addEventLi
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => $(button.dataset.close).close()));
 $('course-grid').addEventListener('click', event => {const button = event.target.closest('[data-course]'); if (button) openCourse(button.dataset.course);});
 $('detail-content').addEventListener('click', event => {const button = event.target.closest('[data-detail-reading]'); if (button) {state.detailReading=button.dataset.detailReading; renderDetail();}});
+$('calendar-reading').addEventListener('change', () => {
+  state.calendarReading = $('calendar-reading').value;
+  state.calendarMonth = state.calendarDay = null;
+  renderCalendar();
+});
+$('calendar-prev').addEventListener('click', () => moveCalendarMonth(-1));
+$('calendar-next').addEventListener('click', () => moveCalendarMonth(1));
+$('calendar-retry').addEventListener('click', loadCalendar);
+$('calendar-grid').addEventListener('click', event => {
+  const button = event.target.closest('[data-day]');
+  if (!button || button.disabled) return;
+  state.calendarDay = button.dataset.day;
+  renderCalendar();
+  $('calendar-grid').querySelector(`[data-day="${state.calendarDay}"]`).focus({preventScroll:true});
+  $('calendar-day-detail').scrollIntoView({block:'nearest'});
+});
+$('calendar-day-content').addEventListener('click', event => {
+  const button = event.target.closest('[data-course]');
+  if (button) openCourse(button.dataset.course);
+});
+window.addEventListener('hashchange', () => {
+  applyView();
+  if (window.location.hash === '#courses') $('courses').scrollIntoView();
+  else window.scrollTo(0,0);
+});
 for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('click', event => {
   if (event.target !== dialog) return;
   const box = dialog.getBoundingClientRect();
@@ -303,7 +439,7 @@ $('credential-form').addEventListener('submit', async event => {
 });
 document.addEventListener('keydown', event => {
   if (document.body.classList.contains('space-locked')) return;
-  if (event.key === '/' && !['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName) && !document.querySelector('dialog[open]')) {event.preventDefault(); $('search').focus();}
+  if (event.key === '/' && !$('dashboard-view').hidden && !['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName) && !document.querySelector('dialog[open]')) {event.preventDefault(); $('search').focus();}
 });
 
 function unlockSpace() {

@@ -158,6 +158,8 @@ def create_app(config=None, database=None, launch=None):
             dashboard = CloudDashboard(db, slug)
             if action == 'dashboard':
                 return jsonify(dashboard.payload())
+            if action == 'calendar':
+                return jsonify(dashboard.calendar())
             if action.startswith('courses/'):
                 return jsonify(dashboard.course(action.removeprefix('courses/')))
             return jsonify(error='Action introuvable.'), 404
