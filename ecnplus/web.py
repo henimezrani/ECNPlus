@@ -75,6 +75,13 @@ class Dashboard:
         settings = self.settings()
         configured = self.credential_configured()
         summary = snapshot['summary'] if snapshot else None
+        specialties = []
+        if snapshot:
+            with self.mutex:
+                if 'dataset' not in snapshot:
+                    snapshot['dataset'] = json.loads((snapshot['folder'] / 'dataset.json').read_text(encoding='utf-8'))
+                specialties = [{'id': module['_id'], 'name': module['name']}
+                               for module in snapshot['dataset']['modules']]
         saved_settings = summary['settings'] if summary else settings
         today = datetime.now(ZoneInfo('Africa/Tunis')).date().isoformat()
         current = saved_settings['readings'][0]['id']
@@ -83,7 +90,7 @@ class Dashboard:
                 current = reading['id']
         collection = snapshot['collection'] if snapshot else None
         return {'profile': {'slug': self.profile['slug'], 'name': self.profile['name']},
-                'summary': summary, 'collection': {
+                'summary': summary, 'specialties': specialties, 'collection': {
                     'last_sync': collection['run'].get('finished_at') if collection else None,
                     'phase_ready': collection.get('phase_ready', False) if collection else False,
                     'source_status': summary['source_status'] if summary else None,

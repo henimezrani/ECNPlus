@@ -81,10 +81,12 @@ function renderCourses() {
   const filter = $('filter').value;
   const sort = $('sort').value;
   const all = summary?.courses || [];
+  const specialties = new Map((state.data?.specialties || []).map(specialty => [specialty.id, specialty.name]));
+  const specialtyName = course => specialties.get(course.module_id) || 'Spécialité non renseignée';
   const counts = course => course.readings[state.focus] || {answered_questions:0, completed_series:0, in_progress_series:0};
   const courses = all.filter(course => {
     const focused = counts(course);
-    return normalize(course.name).includes(query) && (filter === 'all' ||
+    return (normalize(course.name).includes(query) || normalize(specialtyName(course)).includes(query)) && (filter === 'all' ||
       filter === 'not-started' && focused.answered_questions === 0 ||
       filter === 'active' && focused.answered_questions > 0 ||
       filter === 'unfinished' && focused.in_progress_series > 0);
@@ -97,10 +99,23 @@ function renderCourses() {
     return difference || a.name.localeCompare(b.name, 'fr');
   });
   $('course-grid').setAttribute('aria-busy', 'false');
-  $('course-grid').innerHTML = courses.map(course => `<article class="course-card"><button class="card-open" data-course="${escapeHTML(course.id)}" aria-label="Voir le détail de ${escapeHTML(course.name)}"><span class="card-heading"><span class="course-icon">${icon('book')}</span><span class="course-name">${escapeHTML(course.name)}</span></span><span class="card-table-heading"><span>Lecture</span><span>Séries terminées</span><span>Questions</span></span>${readings.map((r, i) => {
+  const card = course => `<article class="course-card"><button class="card-open" data-course="${escapeHTML(course.id)}" aria-label="Voir le détail de ${escapeHTML(course.name)}"><span class="card-heading"><span class="course-icon">${icon('book')}</span><span class="course-name">${escapeHTML(course.name)}</span></span><span class="card-table-heading"><span>Lecture</span><span>Séries terminées</span><span>Questions</span></span>${readings.map((r, i) => {
     const values = course.readings[r.id];
     return `<span class="reading-row reading-${i+1} ${r.id === state.focus ? 'focused' : ''}"><span class="reading-name"><span class="reading-dot"></span>${escapeHTML(r.name)}</span><span class="series-count ${!values.completed_series ? 'zero' : ''}">${number(values.completed_series)}</span><span class="questions-count ${!values.answered_questions ? 'zero' : ''}">${number(values.answered_questions)}</span></span>`;
-  }).join('')}${course.totals_status === 'provisional' ? '<span class="provisional-dot">Certaines données doivent être mises à jour ou vérifiées</span>' : ''}<span class="card-total"><span>Total</span><strong>${number(course.total.completed_series)}</strong> séries terminées <span>·</span><strong>${number(course.total.answered_questions)}</strong> questions répondues ${icon('arrow')}</span></button></article>`).join('');
+  }).join('')}${course.totals_status === 'provisional' ? '<span class="provisional-dot">Certaines données doivent être mises à jour ou vérifiées</span>' : ''}<span class="card-total"><span>Total</span><strong>${number(course.total.completed_series)}</strong> séries terminées <span>·</span><strong>${number(course.total.answered_questions)}</strong> questions répondues ${icon('arrow')}</span></button></article>`;
+  $('course-grid').classList.toggle('grouped', sort === 'specialty');
+  if (sort === 'specialty') {
+    const groups = new Map();
+    for (const course of courses) {
+      const key = course.module_id || '';
+      if (!groups.has(key)) groups.set(key, {name:specialtyName(course), courses:[]});
+      groups.get(key).courses.push(course);
+    }
+    $('course-grid').innerHTML = [...groups.values()].sort((a,b) => a.name.localeCompare(b.name, 'fr')).map((group, i) =>
+      `<section class="specialty-group" aria-labelledby="specialty-${i}"><div class="specialty-heading"><h3 id="specialty-${i}">${escapeHTML(group.name)}</h3><span>${number(group.courses.length)} cours</span></div><div class="course-grid">${group.courses.map(card).join('')}</div></section>`).join('');
+  } else {
+    $('course-grid').innerHTML = courses.map(card).join('');
+  }
   $('course-total').textContent = number(all.length);
   $('nav-count').textContent = number(all.length);
   const focusName = readings.find(r => r.id === state.focus)?.name;
